@@ -42,12 +42,14 @@ async function fetchOrSkip(url, path) { //unrated contest writes an empty result
     try {
         return await fetchToFile(url, path);
     } catch (err) {
-        //console.log(`HELLO ${SKIPPABLE.some(s => err.comment.includes(s))}`);
-        if (!(err instanceof ApiError) || !SKIPPABLE.some(s => err.comment.includes(s))) throw err;
-        mkdirSync(dirname(path), {recursive: true});
-        writeFileSync(path+".tmp", gzipSync(JSON.stringify({status: "SKIPPED", comment: err.comment})));
-        renameSync(path+".tmp", path);
-        console.log(`skipped: ${path} — ${err.comment}`);
+        if ((err instanceof ApiError) && SKIPPABLE.some(s => err.comment.includes(s))) {
+            mkdirSync(dirname(path), {recursive: true});
+            writeFileSync(path+".tmp", gzipSync(JSON.stringify({status: "SKIPPED", comment: err.comment})));
+            renameSync(path+".tmp", path);
+            console.log(`skipped: ${path} — ${err.comment}`);
+        } else {
+            throw err;
+        }
         return true;
     }
 }
