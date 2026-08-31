@@ -13,25 +13,17 @@ class ApiError extends Error {
 }
 
 async function apiGet(url) {
-    try {
+   try {
         const res = await fetch(url);
         const text = await res.text();
-
-        let parsed;
-        try {
-            parsed = JSON.parse(text);
-        } catch {
-            throw new Error(`Non-JSON response, HTTP ${res.status}, for URL: ${url}\n${text.slice(0, 300)}`);
-        }
-
-        if(!res.ok || parsed.status!=="OK") {
-            throw new ApiError(url, res.status, parsed.comment);
+        try { const parsed = JSON.parse(text); } catch {}
+        if (parsed?.status !== "OK") {
+            throw new ApiError(url, res.status, parsed?.comment ?? text.slice(0, 300));
         }
         return text;
-    } finally {
+   } finally {
         await sleep(500);
-    }
-    
+   }
 }
 
 async function fetchToFile(url, path) { //false if path already exists
