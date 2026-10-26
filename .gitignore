@@ -1,8 +1,6 @@
-# dependencies
-node_modules
-
 # generated data
 data/*
+*.parquet
 
 # environment variables
 .env
@@ -19,3 +17,6 @@ npm-debug.log*
 # editor
 .idea
 .vscode
+node_modules/
+dist/
+
