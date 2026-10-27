@@ -16,7 +16,8 @@ async function apiGet(url) {
    try {
         const res = await fetch(url);
         const text = await res.text();
-        try { const parsed = JSON.parse(text); } catch {}
+        let parsed;
+        try { parsed = JSON.parse(text); } catch {}
         if (parsed?.status !== "OK") {
             throw new ApiError(url, res.status, parsed?.comment ?? text.slice(0, 300));
         }
