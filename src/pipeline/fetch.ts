@@ -6,17 +6,18 @@ import { dirname } from 'node:path'
 const API = "https://codeforces.com/api";
 
 class ApiError extends Error {
-    constructor(url, httpStatus, comment) {
+    comment: string
+    constructor(url: string, httpStatus: number, comment: string) {
         super(`API refused URL: ${url} \nHTTP: ${httpStatus} \ncomment: ${comment}`);
-        this.comment = comment ?? "";
+        this.comment = comment;
     }
 }
 
-async function apiGet(url) {
+async function apiGet(url: string): Promise<string> {
    try {
         const res = await fetch(url);
         const text = await res.text();
-        let parsed;
+        let parsed: {status: string, comment?: string} | undefined;
         try { parsed = JSON.parse(text); } catch {}
         if (parsed?.status !== "OK") {
             throw new ApiError(url, res.status, parsed?.comment ?? text.slice(0, 300));
@@ -27,7 +28,7 @@ async function apiGet(url) {
    }
 }
 
-async function fetchToFile(url, path) { //false if path already exists
+async function fetchToFile(url: string, path: string): Promise<boolean> { //false if path already exists
     if(existsSync(path)) return false;
     const text = await apiGet(url);
     mkdirSync(dirname(path), {recursive: true});
@@ -39,7 +40,7 @@ async function fetchToFile(url, path) { //false if path already exists
 const SKIPPABLE = ["Rating changes are unavailable", "not found"];
 //unrated and private/hidden contests?
 
-async function fetchOrSkip(url, path) { //unrated contest writes an empty result
+async function fetchOrSkip(url: string, path: string) { //unrated contest writes an empty result
     try {
         return await fetchToFile(url, path);
     } catch (err) {
@@ -56,10 +57,11 @@ async function fetchOrSkip(url, path) { //unrated contest writes an empty result
 }
 
 function buildTargets() {
-    const raw = JSON.parse(gunzipSync(readFileSync("data/contest.list.gz")));
+    type Contest = {id: number, phase: string, name: string, startTimeSeconds: number, type: string};  
+    const raw = JSON.parse(gunzipSync(readFileSync("data/contest.list.gz")).toString()) as {result: Contest[]};
     const targets = raw.result
         .filter(c => c.phase === "FINISHED")
-        .toSorted((a, b) => a.startTimeSeconds - b.startTimeSeconds)
+        .sort((a, b) => a.startTimeSeconds - b.startTimeSeconds)
         .map(({ id, name, startTimeSeconds, type }) => ({ id, name, startTimeSeconds, type }));
     writeFileSync("data/targets.json", JSON.stringify(targets, null, 2));
     return targets;
@@ -86,6 +88,6 @@ async function main() {
 try {
     await main();
 } catch (err) {
-    console.error(err.message);
+    if(err instanceof Error) console.error(err.message);
     process.exit(1);
 }
