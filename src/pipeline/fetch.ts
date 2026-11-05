@@ -4,6 +4,7 @@ import { setTimeout as sleep } from 'node:timers/promises'
 import { dirname } from 'node:path'
 
 const API = "https://codeforces.com/api";
+let lastCall=0;
 
 class ApiError extends Error {
     comment: string
@@ -14,18 +15,18 @@ class ApiError extends Error {
 }
 
 async function apiGet(url: string): Promise<string> {
-   try {
-        const res = await fetch(url);
-        const text = await res.text();
-        let parsed: {status: string, comment?: string} | undefined;
-        try { parsed = JSON.parse(text); } catch {}
-        if (parsed?.status !== "OK") {
-            throw new ApiError(url, res.status, parsed?.comment ?? text.slice(0, 300));
-        }
-        return text;
-   } finally {
-        await sleep(500);
-   }
+    const sinceLastCall = Date.now() - lastCall;
+    if(sinceLastCall < 2000) // 1 call per 2 seconds limit
+        await sleep(2000 - sinceLastCall);
+    lastCall = Date.now();
+    const res = await fetch(url);
+    const text = await res.text();
+    let parsed: {status: string, comment?: string} | undefined;
+    try { parsed = JSON.parse(text); } catch {}
+    if (parsed?.status !== "OK") {
+        throw new ApiError(url, res.status, parsed?.comment ?? text.slice(0, 300));
+    }
+    return text;
 }
 
 async function fetchToFile(url: string, path: string): Promise<boolean> { //false if path already exists
