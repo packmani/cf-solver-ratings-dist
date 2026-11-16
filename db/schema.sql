@@ -5,6 +5,9 @@ DROP TABLE IF EXISTS contests;
 CREATE TABLE contests (
     contest_id int NOT NULL,
     name text NOT NULL,
+    type text NOT NULL,
+    started_at timestamptz, 
+    duration_seconds integer NOT NULL,
     PRIMARY KEY (contest_id)
 );
 
@@ -12,6 +15,8 @@ CREATE TABLE problems (
     contest_id int NOT NULL,
     problem_index text NOT NULL,
     name text NOT NULL,
+    rating smallint,
+    tags text[] NOT NULL,
     PRIMARY KEY (contest_id, problem_index),
     FOREIGN KEY (contest_id) REFERENCES contests (contest_id)
 );
